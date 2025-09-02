@@ -17,5 +17,6 @@ public:
 
 private:
     Ui::MainWindow *ui;
+    uint32_t mu32DoNothing;
 };
 #endif // MAINWINDOW_H
