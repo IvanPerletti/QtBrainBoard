@@ -4,7 +4,7 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
-    , mu32DoNothing(0)
+    , mu32DoNothing(1)
 {
     ui->setupUi(this);
 }
