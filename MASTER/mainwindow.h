@@ -2,6 +2,13 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QTcpSocket>
+#include <QTcpServer>
+#include <QLineEdit>
+#include <QLabel>
+#include <QRadioButton>
+
+#include "tcpmaster.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -15,8 +22,32 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+private slots:
+    void listen();
+    void stop();
+    void clear();
+    void configure();
+
+    void on_pushButtonGetState_clicked();
+
+    void on_pushButtonSetState_clicked();
+
+    void on_pushButtonGetValue_clicked();
+
+public slots:
+    void newConnection(QTcpSocket *client);
+    void disconnection(QTcpSocket *client);
+    void readSocket(QTcpSocket *client, const QByteArray &data);
+
 private:
     Ui::MainWindow *ui;
-    uint32_t mu32DoNothing;
+
+    TcpMaster *tcpMaster;
+    QLineEdit *pPortEdit;
+
+    QVector<QRadioButton*> inputButtons;
+    QVector<QRadioButton*> outputButtons;
+    QVector<QRadioButton*> analogButtons;
+    QVector<QLabel*> analogValues;
 };
 #endif // MAINWINDOW_H
