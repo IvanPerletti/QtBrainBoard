@@ -26,7 +26,6 @@ private slots:
     void listen();
     void stop();
     void clear();
-    void configure();
 
     void on_pushButtonGetState_clicked();
 

@@ -8,6 +8,8 @@
 #include <QRadioButton>
 
 #include "tdigitalinput.h"
+#include "tdigitaloutput.h"
+#include "tanaloginput.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -46,6 +48,26 @@ private slots:
 
     void on_input10_toggled(bool checked);
 
+    void on_analog1_editingFinished();
+
+    void on_analog2_editingFinished();
+
+    void on_analog3_editingFinished();
+
+    void on_analog4_editingFinished();
+
+    void on_analog5_editingFinished();
+
+    void on_analog6_editingFinished();
+
+    void on_analog7_editingFinished();
+
+    void on_analog8_editingFinished();
+
+    void on_analog9_editingFinished();
+
+    void on_analog10_editingFinished();
+
 public slots:
     void connection(void);
     void disconnection(void);
@@ -58,10 +80,11 @@ private:
     QLineEdit *pPortEdit;
     QTcpSocket *tcpSlave;
 
-    QVector<TDigitalInput *>digitalInput;
-    QVector<QToolButton*> outputButtons;
-    QVector<QLineEdit*> analogButtons;
+    QVector<TDigitalInput *> digitalInput;
+    QVector<TDigitalOutput*> digitalOutput;
+    QVector<TAnalogInput*> analogInput;
 
     void on_input_toggled(int idx, bool checked);
+    void on_analog_editingFinished(int idx, int val);
 };
 #endif // MAINWINDOW_H

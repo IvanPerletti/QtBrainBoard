@@ -12,13 +12,17 @@ CONFIG += c++11
 SOURCES += \
     main.cpp \
     mainwindow.cpp \
+    tanaloginput.cpp \
     tcpprotocol.cpp \
-    tdigitalinput.cpp
+    tdigitalinput.cpp \
+    tdigitaloutput.cpp
 
 HEADERS += \
     mainwindow.h \
+    tanaloginput.h \
     tcpprotocol.h \
-    tdigitalinput.h
+    tdigitalinput.h \
+    tdigitaloutput.h
 
 FORMS += \
     mainwindow.ui

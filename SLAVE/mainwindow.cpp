@@ -46,12 +46,28 @@ MainWindow::MainWindow(QWidget *parent)
     digitalInput << new TDigitalInput(ui->input10);
 
     // // Array per gli Output
-    outputButtons << ui->output1 << ui->output2 << ui->output3 << ui->output4 << ui->output5 << ui->output6 << ui->output7 << ui->output8 << ui->output9 << ui->output10;
-    for (int i = 0; i < outputButtons.size(); ++i)
-        outputButtons[i]->setIcon(QIcon(":/icons/off.png"));
+    digitalOutput << new TDigitalOutput(ui->output1);
+    digitalOutput << new TDigitalOutput(ui->output2);
+    digitalOutput << new TDigitalOutput(ui->output3);
+    digitalOutput << new TDigitalOutput(ui->output4);
+    digitalOutput << new TDigitalOutput(ui->output5);
+    digitalOutput << new TDigitalOutput(ui->output6);
+    digitalOutput << new TDigitalOutput(ui->output7);
+    digitalOutput << new TDigitalOutput(ui->output8);
+    digitalOutput << new TDigitalOutput(ui->output9);
+    digitalOutput << new TDigitalOutput(ui->output10);
 
     // Array per gli Analog
-    analogButtons << ui->analog1 << ui->analog2 << ui->analog3 << ui->analog4 << ui->analog5 << ui->analog6 << ui->analog7 << ui->analog8 << ui->analog9 << ui->analog10;
+    analogInput << new TAnalogInput(ui->analog1);
+    analogInput << new TAnalogInput(ui->analog2);
+    analogInput << new TAnalogInput(ui->analog3);
+    analogInput << new TAnalogInput(ui->analog4);
+    analogInput << new TAnalogInput(ui->analog5);
+    analogInput << new TAnalogInput(ui->analog6);
+    analogInput << new TAnalogInput(ui->analog7);
+    analogInput << new TAnalogInput(ui->analog8);
+    analogInput << new TAnalogInput(ui->analog9);
+    analogInput << new TAnalogInput(ui->analog10);
 
     connect(ui->actionConnect, &QAction::triggered, this, &MainWindow::start);
     connect(ui->actionDisconnect, &QAction::triggered, this, &MainWindow::stop);
@@ -82,7 +98,7 @@ void MainWindow::readData(void)
     TcpProtocol tcpProtocol;
     QByteArray data = tcpSlave->readAll();
 
-    ui->plainTextEditLog->appendPlainText(QTime::currentTime().toString("hh:mm:ss.zzz") + "    Message received " + QString(data));
+    ui->plainTextEditLog->appendPlainText(QTime::currentTime().toString("hh:mm:ss.zzz") + "    Message received " + QString(data).chopped(1));
     if (tcpProtocol.fromCommand((char *)data.toStdString().c_str()))
     {
         if (tcpProtocol.getTarget() == TcpProtocol::eTargetDin)
@@ -93,14 +109,14 @@ void MainWindow::readData(void)
         }
         else if (tcpProtocol.getTarget() == TcpProtocol::eTargetDout)
         {
-            outputButtons[tcpProtocol.getIdx()-1]->setIcon(tcpProtocol.getState() == TcpProtocol::eStateOn ? QIcon(":/icons/on.png") :  QIcon(":/icons/off.png"));
-            char *message = tcpProtocol.toAnswer(tcpProtocol.getState());
+            digitalOutput[tcpProtocol.getIdx()-1]->set(tcpProtocol.getState() == TcpProtocol::eStateOn ? true : false);
+            char *message = tcpProtocol.toAnswer(digitalOutput[tcpProtocol.getIdx()-1]->get() ? TcpProtocol::eStateOn : TcpProtocol::eStateOff);
             ui->plainTextEditLog->appendPlainText(QTime::currentTime().toString("hh:mm:ss.zzz") + "    Message sent " + QString(message));
             tcpSlave->write(message);
         }
         else if (tcpProtocol.getTarget() == TcpProtocol::eTargetAnalog)
         {
-            char *message = tcpProtocol.toAnswer(analogButtons[tcpProtocol.getIdx()-1]->text().toInt());
+            char *message = tcpProtocol.toAnswer(analogInput[tcpProtocol.getIdx()-1]->get());
             ui->plainTextEditLog->appendPlainText(QTime::currentTime().toString("hh:mm:ss.zzz") + "    Message sent " + QString(message));
             tcpSlave->write(message);
         }
@@ -179,5 +195,60 @@ void MainWindow::on_input9_toggled(bool checked)
 void MainWindow::on_input10_toggled(bool checked)
 {
     on_input_toggled(9, checked);
+}
+
+void MainWindow::on_analog_editingFinished(int idx, int val)
+{
+    analogInput[idx]->set(val);
+}
+
+void MainWindow::on_analog1_editingFinished()
+{
+    on_analog_editingFinished(0, ui->analog1->text().toInt());
+}
+
+void MainWindow::on_analog2_editingFinished()
+{
+    on_analog_editingFinished(1, ui->analog2->text().toInt());
+}
+
+void MainWindow::on_analog3_editingFinished()
+{
+    on_analog_editingFinished(2, ui->analog3->text().toInt());
+}
+
+void MainWindow::on_analog4_editingFinished()
+{
+    on_analog_editingFinished(3, ui->analog4->text().toInt());
+}
+
+void MainWindow::on_analog5_editingFinished()
+{
+    on_analog_editingFinished(4, ui->analog5->text().toInt());
+}
+
+void MainWindow::on_analog6_editingFinished()
+{
+    on_analog_editingFinished(5, ui->analog6->text().toInt());
+}
+
+void MainWindow::on_analog7_editingFinished()
+{
+    on_analog_editingFinished(6, ui->analog7->text().toInt());
+}
+
+void MainWindow::on_analog8_editingFinished()
+{
+    on_analog_editingFinished(7, ui->analog8->text().toInt());
+}
+
+void MainWindow::on_analog9_editingFinished()
+{
+    on_analog_editingFinished(8, ui->analog9->text().toInt());
+}
+
+void MainWindow::on_analog10_editingFinished()
+{
+    on_analog_editingFinished(9, ui->analog10->text().toInt());
 }
 
