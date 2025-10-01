@@ -95,7 +95,7 @@ void MainWindow::stop(void)
 
 void MainWindow::readData(void)
 {
-    TcpProtocol tcpProtocol;
+    TcpProtocolSlave tcpProtocol;
     QByteArray data = tcpSlave->readAll();
 
     ui->plainTextEditLog->appendPlainText(QTime::currentTime().toString("hh:mm:ss.zzz") + "    Message received " + QString(data).chopped(1));

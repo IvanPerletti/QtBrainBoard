@@ -1,7 +1,7 @@
 #ifndef TCPCOMMAND_H
 #define TCPCOMMAND_H
 
-#define MAX_LEN_MESSAGE 256
+#define MAX_LEN_MESSAGE 64
 
 class TcpProtocol
 {
@@ -29,16 +29,7 @@ public:
     } EStateType;
 
 public:
-    TcpProtocol(ECommandType command, ETargetType target);
-    TcpProtocol(ETargetType target);
     TcpProtocol(void);
-
-    char *toCommand(int idx);
-    char *toCommand(int idx, EStateType state);
-    bool fromCommand(char *message);
-    char *toAnswer(ETargetType target, int idx, EStateType state);
-    char *toAnswer(EStateType state);
-    bool fromAnswer(char *message);
 
     ECommandType getCommand(void) { return command; }
     ETargetType getTarget(void) { return target; }
@@ -46,14 +37,14 @@ public:
     EStateType getState(void) { return state; }
     int getValue(void) { return value; }
 
-private:
+protected:
     ECommandType command;
     ETargetType target;
     int idx;
     EStateType state;
     long value;
-
     char message[MAX_LEN_MESSAGE+1];
+
     const char *strCommand[eCmdMax];
     const char *strTarget[eTargetMax];
     const char *strState[eStateMax];
@@ -62,6 +53,26 @@ private:
 
     void fillVectors(void);
     int verifyToken(char *token, const char *tokens[], int ntokens);
+
+};
+
+class TcpProtocolMaster : public TcpProtocol
+{
+public:
+
+    char *toCommand(ECommandType command, ETargetType target, int idx);
+    char *toCommand(ECommandType command, ETargetType target, int idx, EStateType state);
+    bool fromAnswer(char *message);
+};
+
+class TcpProtocolSlave : public TcpProtocol
+{
+public:
+
+    bool fromCommand(char *message);
+    char *toAnswer(ETargetType target, int idx, EStateType state);
+    char *toAnswer(EStateType state);
+    char *toAnswer(int val);
 };
 
 #endif // TCPCOMMAND_H

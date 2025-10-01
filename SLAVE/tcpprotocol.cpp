@@ -4,18 +4,17 @@
 
 #include "tcpprotocol.h"
 
-TcpProtocol::TcpProtocol(ECommandType command, ETargetType target) :
-    command(command),
-    target(target)
-{
-    fillVectors();
-}
+static const char *strNull = "";
 
-TcpProtocol::TcpProtocol(ETargetType target) :
-    target(target)
-{
-    fillVectors();
-}
+static const char *strCommandGet = "GET";
+static const char *strCommandSet = "SET";
+
+static const char *strTargetDin = "DIN";
+static const char *strTargetDout = "DOUT";
+static const char *strTargetAnalog = "ANALOG";
+
+static const char *strStateOn = "ON";
+static const char *strStateOff = "OFF";
 
 TcpProtocol::TcpProtocol(void)
 {
@@ -24,99 +23,21 @@ TcpProtocol::TcpProtocol(void)
 
 void TcpProtocol::fillVectors(void)
 {
-    strCommand[0] = "";
-    strCommand[1] = "GET";
-    strCommand[2] = "SET";
+    strCommand[0] = strNull;
+    strCommand[1] = strCommandGet;
+    strCommand[2] = strCommandSet;
 
-    strTarget[0] = "";
-    strTarget[1] = "DIN";
-    strTarget[2] = "DOUT";
-    strTarget[3] = "ANALOG";
+    strTarget[0] = strNull;
+    strTarget[1] = strTargetDin;
+    strTarget[2] = strTargetDout;
+    strTarget[3] = strTargetAnalog;
 
-    strState[0] = "";
-    strState[1] = "ON";
-    strState[2] = "OFF";
+    strState[0] = strNull;
+    strState[1] = strStateOn;
+    strState[2] = strStateOff;
 
     strSep = " ";
     strTerm = "\n";
-}
-
-char *TcpProtocol::toCommand(int idx)
-{
-    char strIdx[10];
-
-    itoa(idx, strIdx, 10);
-
-    strcpy(message, strCommand[command]);
-    strcat(message, strSep);
-    strcat(message, strTarget[target]);
-    strcat(message, strSep);
-    strcat(message, strIdx);
-    strcat(message, strTerm);
-
-    return message;
-}
-
-char *TcpProtocol::toCommand(int idx, EStateType state)
-{
-    char strIdx[10];
-
-    itoa(idx, strIdx, 10);
-
-    strcpy(message, strCommand[command]);
-    strcat(message, strSep);
-    strcat(message, strTarget[target]);
-    strcat(message, strSep);
-    strcat(message, strIdx);
-    strcat(message, strSep);
-    strcat(message, strState[state]);
-    strcat(message, strTerm);
-
-    return message;
-}
-
-char *TcpProtocol::toAnswer(ETargetType target, int idx, EStateType state)
-{
-    char strIdx[10];
-
-    itoa(idx, strIdx, 10);
-    strcpy(message, strTarget[target]);
-    strcat(message, strSep);
-    strcat(message, strIdx);
-    strcat(message, strSep);
-    strcat(message, strState[state]);
-    strcat(message, strTerm);
-    return message;
-}
-
-char *TcpProtocol::toAnswer(EStateType state)
-{
-    char strIdx[10];
-
-    itoa(idx, strIdx, 10);
-    strcpy(message, strTarget[target]);
-    strcat(message, strSep);
-    strcat(message, strIdx);
-    strcat(message, strSep);
-    strcat(message, strState[state]);
-    strcat(message, strTerm);
-    return message;
-}
-
-char *TcpProtocol::toAnswer(int val)
-{
-    char strIdx[10];
-    char strVal[20];
-
-    itoa(idx, strIdx, 10);
-    itoa(val, strVal, 10);
-    strcpy(message, strTarget[target]);
-    strcat(message, strSep);
-    strcat(message, strIdx);
-    strcat(message, strSep);
-    strcat(message, strVal);
-    strcat(message, strTerm);
-    return message;
 }
 
 int TcpProtocol::verifyToken(char *token, const char *tokens[], int ntokens)
@@ -131,7 +52,83 @@ int TcpProtocol::verifyToken(char *token, const char *tokens[], int ntokens)
     return 0;
 }
 
-bool TcpProtocol::fromCommand(char *message)
+/* -----------------------------------------------------------------------------------*/
+// TcpProtocolMaster
+/* -----------------------------------------------------------------------------------*/
+
+char *TcpProtocolMaster::toCommand(ECommandType command, ETargetType target, int idx)
+{
+    char strIdx[10];
+
+    itoa(idx, strIdx, 10);
+
+    strcpy(message, strCommand[command]);
+    strcat(message, strSep);
+    strcat(message, strTarget[target]);
+    strcat(message, strSep);
+    strcat(message, strIdx);
+    strcat(message, strTerm);
+
+    return message;
+}
+
+char *TcpProtocolMaster::toCommand(ECommandType command, ETargetType target, int idx, EStateType state)
+{
+    char strIdx[10];
+
+    itoa(idx, strIdx, 10);
+
+    strcpy(message, strCommand[command]);
+    strcat(message, strSep);
+    strcat(message, strTarget[target]);
+    strcat(message, strSep);
+    strcat(message, strIdx);
+    strcat(message, strSep);
+    strcat(message, strState[state]);
+    strcat(message, strTerm);
+
+    return message;
+}
+
+bool TcpProtocolMaster::fromAnswer(char *message)
+{
+    bool ret = false;
+    char *token;
+
+    if ((token = strtok(message, (const char *)" ")) != NULL)
+    {
+        if ((target = (ETargetType)verifyToken(token, strTarget, (int)eTargetMax)) > 0)
+        {
+            if ((token = strtok(NULL, (const char *)" ")) != NULL)
+            {
+                if ((idx = atoi(token)) > 0)
+                {
+                    if ((token = strtok(NULL, (const char *)"\n")) != NULL)
+                    {
+                        if (target == eTargetDin || target == eTargetDout)
+                        {
+                            if ((state = (EStateType)verifyToken(token, strState, (int)eStateMax)) > 0)
+                                ret = true;
+                        }
+                        else if (target == eTargetAnalog)
+                        {
+                            value = strtol(token, NULL, 10);
+                            ret = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return ret;
+}
+
+/* -----------------------------------------------------------------------------------*/
+// TcpProtocolSlave
+/* -----------------------------------------------------------------------------------*/
+
+bool TcpProtocolSlave::fromCommand(char *message)
 {
     bool ret = false;
     char *token;
@@ -176,36 +173,46 @@ bool TcpProtocol::fromCommand(char *message)
     return ret;
 }
 
-bool TcpProtocol::fromAnswer(char *message)
+char *TcpProtocolSlave::toAnswer(ETargetType target, int idx, EStateType state)
 {
-    bool ret = false;
-    char *token;
+    char strIdx[10];
 
-    if ((token = strtok(message, (const char *)" ")) != NULL)
-    {
-        if ((target = (ETargetType)verifyToken(token, strTarget, (int)eTargetMax)) > 0)
-        {
-            if ((token = strtok(NULL, (const char *)" ")) != NULL)
-            {
-                if ((idx = atoi(token)) > 0)
-                {
-                    if ((token = strtok(NULL, (const char *)"\n")) != NULL)
-                    {
-                        if (target == eTargetDin || target == eTargetDout)
-                        {
-                            if ((state = (EStateType)verifyToken(token, strState, (int)eStateMax)) > 0)
-                                ret = true;
-                        }
-                        else if (target == eTargetAnalog)
-                        {
-                            value = strtol(token, NULL, 10);
-                            ret = true;
-                        }
-                    }
-                }
-            }
-        }
-    }
+    itoa(idx, strIdx, 10);
+    strcpy(message, strTarget[target]);
+    strcat(message, strSep);
+    strcat(message, strIdx);
+    strcat(message, strSep);
+    strcat(message, strState[state]);
+    strcat(message, strTerm);
+    return message;
+}
 
-    return ret;
+char *TcpProtocolSlave::toAnswer(EStateType state)
+{
+    char strIdx[10];
+
+    itoa(idx, strIdx, 10);
+    strcpy(message, strTarget[target]);
+    strcat(message, strSep);
+    strcat(message, strIdx);
+    strcat(message, strSep);
+    strcat(message, strState[state]);
+    strcat(message, strTerm);
+    return message;
+}
+
+char *TcpProtocolSlave::toAnswer(int val)
+{
+    char strIdx[10];
+    char strVal[20];
+
+    itoa(idx, strIdx, 10);
+    itoa(val, strVal, 10);
+    strcpy(message, strTarget[target]);
+    strcat(message, strSep);
+    strcat(message, strIdx);
+    strcat(message, strSep);
+    strcat(message, strVal);
+    strcat(message, strTerm);
+    return message;
 }

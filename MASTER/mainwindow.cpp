@@ -105,7 +105,7 @@ void MainWindow::stop(void)
 
 void MainWindow::readSocket(QTcpSocket *client, const QByteArray &data)
 {
-    TcpProtocol tcpProtocol;
+    TcpProtocolMaster tcpProtocol;
 
     ui->plainTextEditLog->appendPlainText(QTime::currentTime().toString("hh:mm:ss.zzz") + "    Message received " + QString(data));
     if (tcpProtocol.fromAnswer((char *)data.toStdString().c_str()))
@@ -139,7 +139,7 @@ void MainWindow::on_pushButtonGetState_clicked()
             break;
     }
 
-    QByteArray message(TcpProtocol(TcpProtocol::eCmdGet, TcpProtocol::eTargetDin).toCommand(i + 1));
+    QByteArray message(TcpProtocolMaster().toCommand(TcpProtocol::eCmdGet, TcpProtocol::eTargetDin, i + 1));
     tcpMaster->sendToClient(message);
     ui->plainTextEditLog->appendPlainText(QTime::currentTime().toString("hh:mm:ss.zzz") + "    Message sent " + QString(message).chopped(1));
 }
@@ -155,7 +155,7 @@ void MainWindow::on_pushButtonSetState_clicked()
     }
     TcpProtocol::EStateType state = ui->radioOn->isChecked() ? TcpProtocol::eStateOn : TcpProtocol::eStateOff;
 
-    QByteArray message(TcpProtocol(TcpProtocol::eCmdSet, TcpProtocol::eTargetDout).toCommand(i + 1, state));
+    QByteArray message(TcpProtocolMaster().toCommand(TcpProtocol::eCmdSet, TcpProtocol::eTargetDout, i + 1, state));
     tcpMaster->sendToClient(message);
     ui->plainTextEditLog->appendPlainText(QTime::currentTime().toString("hh:mm:ss.zzz") + "    Message sent " + QString(message).chopped(1));
 }
@@ -170,7 +170,7 @@ void MainWindow::on_pushButtonGetValue_clicked()
             break;
     }
 
-    QByteArray message(TcpProtocol(TcpProtocol::eCmdGet, TcpProtocol::eTargetAnalog).toCommand(i + 1));
+    QByteArray message(TcpProtocolMaster().toCommand(TcpProtocol::eCmdGet, TcpProtocol::eTargetAnalog, i + 1));
     tcpMaster->sendToClient(message);
     ui->plainTextEditLog->appendPlainText(QTime::currentTime().toString("hh:mm:ss.zzz") + "    Message sent " + QString(message).chopped(1));
 }
