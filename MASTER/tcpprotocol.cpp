@@ -60,7 +60,7 @@ char *TcpProtocolMaster::toCommand(ECommandType command, ETargetType target, int
 {
     char strIdx[10];
 
-    itoa(idx, strIdx, 10);
+    snprintf(strIdx, sizeof(strIdx), "%d", idx);
 
     strcpy(message, strCommand[command]);
     strcat(message, strSep);
@@ -76,7 +76,7 @@ char *TcpProtocolMaster::toCommand(ECommandType command, ETargetType target, int
 {
     char strIdx[10];
 
-    itoa(idx, strIdx, 10);
+    snprintf(strIdx, sizeof(strIdx), "%d", idx);
 
     strcpy(message, strCommand[command]);
     strcat(message, strSep);
@@ -177,7 +177,8 @@ char *TcpProtocolSlave::toAnswer(ETargetType target, int idx, EStateType state)
 {
     char strIdx[10];
 
-    itoa(idx, strIdx, 10);
+    snprintf(strIdx, sizeof(strIdx), "%d", idx);
+
     strcpy(message, strTarget[target]);
     strcat(message, strSep);
     strcat(message, strIdx);
@@ -191,7 +192,8 @@ char *TcpProtocolSlave::toAnswer(EStateType state)
 {
     char strIdx[10];
 
-    itoa(idx, strIdx, 10);
+    snprintf(strIdx, sizeof(strIdx), "%d", idx);
+
     strcpy(message, strTarget[target]);
     strcat(message, strSep);
     strcat(message, strIdx);
@@ -206,8 +208,9 @@ char *TcpProtocolSlave::toAnswer(int val)
     char strIdx[10];
     char strVal[20];
 
-    itoa(idx, strIdx, 10);
-    itoa(val, strVal, 10);
+    snprintf(strIdx, sizeof(strIdx), "%d", idx);
+    snprintf(strVal, sizeof(strVal), "%d", val);
+
     strcpy(message, strTarget[target]);
     strcat(message, strSep);
     strcat(message, strIdx);
