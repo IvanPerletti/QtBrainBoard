@@ -1,6 +1,8 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "tcpprotocol.h"
+#include "TDigitalPort.h"
+#include "TAnalogPort.h"
 
 #include <QTime>
 
@@ -34,40 +36,46 @@ MainWindow::MainWindow(QWidget *parent)
     pPortEdit->setText(QString().setNum(DEFAULT_TCP_PORT));
 
     // // Array per gli Input
-    digitalInput << new TDigitalInput(ui->input1);
-    digitalInput << new TDigitalInput(ui->input2);
-    digitalInput << new TDigitalInput(ui->input3);
-    digitalInput << new TDigitalInput(ui->input4);
-    digitalInput << new TDigitalInput(ui->input5);
-    digitalInput << new TDigitalInput(ui->input6);
-    digitalInput << new TDigitalInput(ui->input7);
-    digitalInput << new TDigitalInput(ui->input8);
-    digitalInput << new TDigitalInput(ui->input9);
-    digitalInput << new TDigitalInput(ui->input10);
+    inputButtons << ui->input1;
+    inputButtons << ui->input2;
+    inputButtons << ui->input3;
+    inputButtons << ui->input4;
+    inputButtons << ui->input5;
+    inputButtons << ui->input6;
+    inputButtons << ui->input7;
+    inputButtons << ui->input8;
+    inputButtons << ui->input9;
+    inputButtons << ui->input10;
+    for (int i = 0; i < inputButtons.size(); ++i)
+        inputButtons[i]->setIcon(QIcon(":/icons/off.png"));
 
     // // Array per gli Output
-    digitalOutput << new TDigitalOutput(ui->output1);
-    digitalOutput << new TDigitalOutput(ui->output2);
-    digitalOutput << new TDigitalOutput(ui->output3);
-    digitalOutput << new TDigitalOutput(ui->output4);
-    digitalOutput << new TDigitalOutput(ui->output5);
-    digitalOutput << new TDigitalOutput(ui->output6);
-    digitalOutput << new TDigitalOutput(ui->output7);
-    digitalOutput << new TDigitalOutput(ui->output8);
-    digitalOutput << new TDigitalOutput(ui->output9);
-    digitalOutput << new TDigitalOutput(ui->output10);
+    outputButtons << ui->output1;
+    outputButtons << ui->output2;
+    outputButtons << ui->output3;
+    outputButtons << ui->output4;
+    outputButtons << ui->output5;
+    outputButtons << ui->output6;
+    outputButtons << ui->output7;
+    outputButtons << ui->output8;
+    outputButtons << ui->output9;
+    outputButtons << ui->output10;
+    for (int i = 0; i < outputButtons.size(); ++i)
+        outputButtons[i]->setIcon(QIcon(":/icons/off.png"));
 
     // Array per gli Analog
-    analogInput << new TAnalogInput(ui->analog1);
-    analogInput << new TAnalogInput(ui->analog2);
-    analogInput << new TAnalogInput(ui->analog3);
-    analogInput << new TAnalogInput(ui->analog4);
-    analogInput << new TAnalogInput(ui->analog5);
-    analogInput << new TAnalogInput(ui->analog6);
-    analogInput << new TAnalogInput(ui->analog7);
-    analogInput << new TAnalogInput(ui->analog8);
-    analogInput << new TAnalogInput(ui->analog9);
-    analogInput << new TAnalogInput(ui->analog10);
+    analogEdits << ui->analog1;
+    analogEdits << ui->analog2;
+    analogEdits << ui->analog3;
+    analogEdits << ui->analog4;
+    analogEdits << ui->analog5;
+    analogEdits << ui->analog6;
+    analogEdits << ui->analog7;
+    analogEdits << ui->analog8;
+    analogEdits << ui->analog9;
+    analogEdits << ui->analog10;
+    for (int i = 0; i < analogEdits.size(); ++i)
+        analogEdits[i]->setText(QString::number(0));
 
     connect(ui->actionConnect, &QAction::triggered, this, &MainWindow::start);
     connect(ui->actionDisconnect, &QAction::triggered, this, &MainWindow::stop);
@@ -103,20 +111,24 @@ void MainWindow::readData(void)
     {
         if (tcpProtocol.getTarget() == TcpProtocol::eTargetDin)
         {
-            char *message = tcpProtocol.toAnswer(digitalInput[tcpProtocol.getIdx()-1]->get() ? TcpProtocol::eStateOn : TcpProtocol::eStateOff);
+            char *message = tcpProtocol.toAnswer(digitalPort.check((enumDigitalIn)tcpProtocol.getIdx()) == HIGH ? TcpProtocol::eStateOn : TcpProtocol::eStateOff);
             ui->plainTextEditLog->appendPlainText(QTime::currentTime().toString("hh:mm:ss.zzz") + "    Message sent " + QString(message));
             tcpSlave->write(message);
         }
         else if (tcpProtocol.getTarget() == TcpProtocol::eTargetDout)
         {
-            digitalOutput[tcpProtocol.getIdx()-1]->set(tcpProtocol.getState() == TcpProtocol::eStateOn ? true : false);
-            char *message = tcpProtocol.toAnswer(digitalOutput[tcpProtocol.getIdx()-1]->get() ? TcpProtocol::eStateOn : TcpProtocol::eStateOff);
+            outputButtons[tcpProtocol.getIdx()-1]->setIcon(tcpProtocol.getState() == TcpProtocol::eStateOn ? QIcon(":/icons/on.png") : QIcon(":/icons/off.png"));
+            if (tcpProtocol.getState() == TcpProtocol::eStateOn)
+                digitalPort.setNow((enumDigitalOut)tcpProtocol.getIdx());
+            else
+                digitalPort.resetNow((enumDigitalOut)tcpProtocol.getIdx());
+            char *message = tcpProtocol.toAnswer(digitalPort.check((enumDigitalOut)tcpProtocol.getIdx()) == HIGH ? TcpProtocol::eStateOn : TcpProtocol::eStateOff);
             ui->plainTextEditLog->appendPlainText(QTime::currentTime().toString("hh:mm:ss.zzz") + "    Message sent " + QString(message));
             tcpSlave->write(message);
         }
         else if (tcpProtocol.getTarget() == TcpProtocol::eTargetAnalog)
         {
-            char *message = tcpProtocol.toAnswer(analogInput[tcpProtocol.getIdx()-1]->get());
+            char *message = tcpProtocol.toAnswer(tAnalogPort.read((AnalogPortNum)(tcpProtocol.getIdx()-1)));
             ui->plainTextEditLog->appendPlainText(QTime::currentTime().toString("hh:mm:ss.zzz") + "    Message sent " + QString(message));
             tcpSlave->write(message);
         }
@@ -144,7 +156,8 @@ void MainWindow::disconnection(void)
 
 void MainWindow::on_input_toggled(int idx, bool checked)
 {
-    digitalInput[idx]->set(checked);
+    digitalPort.updateIN((enumDigitalIn)idx, checked ? HIGH : LOW);
+    inputButtons[idx]->setIcon(checked ? QIcon(":/icons/on.png") : QIcon(":/icons/off.png"));
 }
 
 void MainWindow::on_input1_toggled(bool checked)
@@ -199,7 +212,7 @@ void MainWindow::on_input10_toggled(bool checked)
 
 void MainWindow::on_analog_editingFinished(int idx, int val)
 {
-    analogInput[idx]->set(val);
+    tAnalogPort.write((AnalogPortNum)idx, (long)val);
 }
 
 void MainWindow::on_analog1_editingFinished()

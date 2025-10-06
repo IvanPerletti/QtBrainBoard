@@ -10,15 +10,15 @@ CONFIG += c++11
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    ../Lib/tcpprotocol.cpp \
     main.cpp \
     mainwindow.cpp \
-    tcpmaster.cpp \
-    tcpprotocol.cpp
+    tcpmaster.cpp
 
 HEADERS += \
+    ../Lib/tcpprotocol.h \
     mainwindow.h \
-    tcpmaster.h \
-    tcpprotocol.h
+    tcpmaster.h
 
 FORMS += \
     mainwindow.ui

@@ -1,6 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "tcpprotocol.h"
+#include "..\Lib\tcpprotocol.h"
 
 #include <QTime>
 #include <QLineEdit>

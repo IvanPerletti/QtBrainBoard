@@ -7,10 +7,6 @@
 #include <QLabel>
 #include <QRadioButton>
 
-#include "tdigitalinput.h"
-#include "tdigitaloutput.h"
-#include "tanaloginput.h"
-
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
@@ -80,9 +76,9 @@ private:
     QLineEdit *pPortEdit;
     QTcpSocket *tcpSlave;
 
-    QVector<TDigitalInput *> digitalInput;
-    QVector<TDigitalOutput*> digitalOutput;
-    QVector<TAnalogInput*> analogInput;
+    QVector<QToolButton *> inputButtons;
+    QVector<QToolButton *> outputButtons;
+    QVector<QLineEdit *> analogEdits;
 
     void on_input_toggled(int idx, bool checked);
     void on_analog_editingFinished(int idx, int val);
