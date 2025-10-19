@@ -7,6 +7,8 @@
 #include <QLabel>
 #include <QRadioButton>
 
+#include "..\Lib\tcpprotocol.h"
+
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
@@ -82,5 +84,9 @@ private:
 
     void on_input_toggled(int idx, bool checked);
     void on_analog_editingFinished(int idx, int val);
+
+    TcpProtocolSlave tcpProtocolSlave;
+
+    void parseCommand(char *message);
 };
 #endif // MAINWINDOW_H

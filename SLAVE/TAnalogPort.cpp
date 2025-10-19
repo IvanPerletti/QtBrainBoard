@@ -49,7 +49,7 @@ TAnalogPort::~TAnalogPort(void)
  * @brief Reads the analog port and gives the value
  * @param portNum	portNum to be read
  */
-long TAnalogPort::read ( AnalogPortNum portNum )
+long TAnalogPort::read ( enumAnalogPort portNum )
 {
 	short u16Position = portNum;
 #ifdef STM32F4XX

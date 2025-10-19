@@ -50,6 +50,12 @@ MainWindow::MainWindow(QWidget *parent)
     ui->pushButtonGetState->setEnabled(false);
     ui->pushButtonSetState->setEnabled(false);
     ui->pushButtonGetValue->setEnabled(false);
+    ui->pushButtonOpenCAN->setEnabled(false);
+    ui->pushButtonCloseCAN->setEnabled(false);
+    ui->pushButtonFilterCAN->setEnabled(false);
+    ui->pushButtonSpeedCAN->setEnabled(false);
+    ui->pushButtonWriteCAN->setEnabled(false);
+    ui->pushButtonReadCAN->setEnabled(false);
 
     QObject::connect(tcpMaster, &TcpMaster::clientConnected, this, &MainWindow::newConnection);
     QObject::connect(tcpMaster, &TcpMaster::dataReceived, this, &MainWindow::readSocket);
@@ -69,6 +75,12 @@ void MainWindow::newConnection(QTcpSocket *client)
     ui->pushButtonGetState->setEnabled(true);
     ui->pushButtonSetState->setEnabled(true);
     ui->pushButtonGetValue->setEnabled(true);
+    ui->pushButtonOpenCAN->setEnabled(true);
+    ui->pushButtonCloseCAN->setEnabled(true);
+    ui->pushButtonFilterCAN->setEnabled(true);
+    ui->pushButtonSpeedCAN->setEnabled(true);
+    ui->pushButtonWriteCAN->setEnabled(true);
+    ui->pushButtonReadCAN->setEnabled(true);
     ui->statusbar->showMessage("Client connected");
     ui->plainTextEditLog->appendPlainText(QTime::currentTime().toString("hh:mm:ss.zzz") + "    Connection from " + client->peerAddress().toString());
 }
@@ -122,6 +134,29 @@ void MainWindow::readSocket(QTcpSocket *client, const QByteArray &data)
         {
             analogValues[tcpProtocol.getIdx()-1]->setText(QString::number(tcpProtocol.getValue()));
         }
+        else if (tcpProtocol.getTarget() == TcpProtocol::eTargetCAN)
+        {
+            if (tcpProtocol.getCommand() == TcpProtocol::eCmdReceive)
+            {
+                ui->lineEditRxIdCAN->setText(QString(tcpProtocol.getParams(0)));
+                for (int ind=1; ind<tcpProtocol.getNParams(); ind++)
+                {
+                    QLineEdit *editTxData;
+                    switch (ind)
+                    {
+                    case 0: editTxData = ui->lineEditTxData1CAN; break;
+                    case 1: editTxData = ui->lineEditTxData2CAN; break;
+                    case 2: editTxData = ui->lineEditTxData3CAN; break;
+                    case 3: editTxData = ui->lineEditTxData4CAN; break;
+                    case 4: editTxData = ui->lineEditTxData5CAN; break;
+                    case 5: editTxData = ui->lineEditTxData6CAN; break;
+                    case 6: editTxData = ui->lineEditTxData7CAN; break;
+                    case 7: editTxData = ui->lineEditTxData8CAN; break;
+                    }
+                    editTxData->setText(QString(tcpProtocol.getParams(ind)));
+                }
+            }
+        }
     }
 }
 
@@ -173,5 +208,125 @@ void MainWindow::on_pushButtonGetValue_clicked()
     QByteArray message(TcpProtocolMaster().toCommand(TcpProtocol::eCmdGet, TcpProtocol::eTargetAnalog, i + 1));
     tcpMaster->sendToClient(message);
     ui->plainTextEditLog->appendPlainText(QTime::currentTime().toString("hh:mm:ss.zzz") + "    Message sent " + QString(message).chopped(1));
+}
+
+
+void MainWindow::on_pushButtonOpenCAN_clicked()
+{
+    QByteArray message(TcpProtocolMaster().toCommand(TcpProtocol::eCmdOpen, TcpProtocol::eTargetCAN, 1));
+    tcpMaster->sendToClient(message);
+    ui->plainTextEditLog->appendPlainText(QTime::currentTime().toString("hh:mm:ss.zzz") + "    Message sent " + QString(message).chopped(1));
+}
+
+
+void MainWindow::on_pushButtonCloseCAN_clicked()
+{
+    QByteArray message(TcpProtocolMaster().toCommand(TcpProtocol::eCmdClose, TcpProtocol::eTargetCAN, 1));
+    tcpMaster->sendToClient(message);
+    ui->plainTextEditLog->appendPlainText(QTime::currentTime().toString("hh:mm:ss.zzz") + "    Message sent " + QString(message).chopped(1));
+}
+
+
+void MainWindow::on_pushButtonSpeedCAN_clicked()
+{
+    char str_param[MAX_LEN_PARAM+1];
+    char *params[1];
+
+    if (ui->comboBoxSpeedCAN->currentText().length() > 0)
+    {
+        strncpy(str_param, ui->comboBoxSpeedCAN->currentText().toStdString().c_str(), MAX_LEN_PARAM);
+        str_param[MAX_LEN_PARAM] = '\0';
+        params[0] = str_param;
+    }
+    QByteArray message(TcpProtocolMaster().toCommand(TcpProtocol::eCmdSet, TcpProtocol::eTargetCAN, 1, TcpProtocol::eParamSpeed, 1, params));
+    tcpMaster->sendToClient(message);
+    ui->plainTextEditLog->appendPlainText(QTime::currentTime().toString("hh:mm:ss.zzz") + "    Message sent " + QString(message).chopped(1));
+}
+
+
+void MainWindow::on_pushButtonFilterCAN_clicked()
+{
+    int nparams = 0;
+    char str_param[4][MAX_LEN_PARAM+1];
+    char *params[4];
+
+    if (ui->lineEditFilter1CAN->text().length() > 0)
+    {
+        strncpy(str_param[nparams], ui->lineEditFilter1CAN->text().toStdString().c_str(), MAX_LEN_PARAM);
+        str_param[nparams][MAX_LEN_PARAM] = '\0';
+        params[nparams] = str_param[nparams];
+        ++nparams;
+    }
+    if (ui->lineEditFilter2CAN->text().length() > 0)
+    {
+        strncpy(str_param[nparams], ui->lineEditFilter2CAN->text().toStdString().c_str(), MAX_LEN_PARAM);
+        str_param[nparams][MAX_LEN_PARAM] = '\0';
+        params[nparams] = str_param[nparams];
+        ++nparams;
+    }
+    if (ui->lineEditFilter3CAN->text().length() > 0)
+    {
+        strncpy(str_param[nparams], ui->lineEditFilter3CAN->text().toStdString().c_str(), MAX_LEN_PARAM);
+        str_param[nparams][MAX_LEN_PARAM] = '\0';
+        params[nparams] = str_param[nparams];
+        ++nparams;
+    }
+    if (ui->lineEditFilter4CAN->text().length() > 0)
+    {
+        strncpy(str_param[nparams], ui->lineEditFilter4CAN->text().toStdString().c_str(), MAX_LEN_PARAM);
+        str_param[nparams][MAX_LEN_PARAM] = '\0';
+        params[nparams] = str_param[nparams];
+        ++nparams;
+    }
+    if (nparams)
+    {
+        QByteArray message(TcpProtocolMaster().toCommand(TcpProtocol::eCmdSet, TcpProtocol::eTargetCAN, 1, TcpProtocol::eParamFilter, nparams, params));
+        tcpMaster->sendToClient(message);
+        ui->plainTextEditLog->appendPlainText(QTime::currentTime().toString("hh:mm:ss.zzz") + "    Message sent " + QString(message).chopped(1));
+    }
+}
+
+
+void MainWindow::on_pushButtonWriteCAN_clicked()
+{
+    int nparams = 0;
+    char str_param[1+8][MAX_LEN_PARAM+1];
+    char *params[1+8];
+
+    if (ui->lineEditTxIdCAN->text().length() > 0)
+    {
+        strncpy(str_param[nparams], ui->lineEditTxIdCAN->text().toStdString().c_str(), MAX_LEN_PARAM);
+        str_param[nparams][MAX_LEN_PARAM] = '\0';
+        params[nparams] = str_param[nparams];
+        ++nparams;
+        for (int ind=0; ind<8; ind++)
+        {
+            QLineEdit *editTxData;
+            switch (ind)
+            {
+            case 0: editTxData = ui->lineEditTxData1CAN; break;
+            case 1: editTxData = ui->lineEditTxData2CAN; break;
+            case 2: editTxData = ui->lineEditTxData3CAN; break;
+            case 3: editTxData = ui->lineEditTxData4CAN; break;
+            case 4: editTxData = ui->lineEditTxData5CAN; break;
+            case 5: editTxData = ui->lineEditTxData6CAN; break;
+            case 6: editTxData = ui->lineEditTxData7CAN; break;
+            case 7: editTxData = ui->lineEditTxData8CAN; break;
+            }
+            if (editTxData->text().length() > 0)
+            {
+                strncpy(str_param[nparams], editTxData->text().toStdString().c_str(), MAX_LEN_PARAM);
+                str_param[nparams][MAX_LEN_PARAM] = '\0';
+                params[nparams] = str_param[nparams];
+                ++nparams;
+            }
+        }
+        if (nparams >= 2)   // Id CAN + at least 1 byte of data
+        {
+            QByteArray message(TcpProtocolMaster().toCommand(TcpProtocol::eCmdSend, TcpProtocol::eTargetCAN, 1, TcpProtocol::eParamData, nparams, params));
+            tcpMaster->sendToClient(message);
+            ui->plainTextEditLog->appendPlainText(QTime::currentTime().toString("hh:mm:ss.zzz") + "    Message sent " + QString(message).chopped(1));
+        }
+    }
 }
 

@@ -33,6 +33,16 @@ private slots:
 
     void on_pushButtonGetValue_clicked();
 
+    void on_pushButtonOpenCAN_clicked();
+
+    void on_pushButtonCloseCAN_clicked();
+
+    void on_pushButtonSpeedCAN_clicked();
+
+    void on_pushButtonFilterCAN_clicked();
+
+    void on_pushButtonWriteCAN_clicked();
+
 public slots:
     void newConnection(QTcpSocket *client);
     void disconnection(QTcpSocket *client);

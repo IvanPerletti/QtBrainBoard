@@ -31,7 +31,7 @@ typedef enum {
 	AN_AUX1      	= AN_2V5,
 	AN_AUX2      	= AN_5V
 
-} AnalogPortNum; // please modify TAnalogPort.read( )too
+} enumAnalogPort; // please modify TAnalogPort.read( )too
 
 #define IS_ANALOG_PORT(X)	(( X < ANALOG_NUMEL ))
 
@@ -43,9 +43,9 @@ private:
 public:
 	TAnalogPort(void);
 	~TAnalogPort(void);
-	long read ( AnalogPortNum portNum );
+    long read ( enumAnalogPort portNum );
 #ifndef STM32F4XX
-    void write( AnalogPortNum portNum, long val) { u16aAdcValue[portNum] = val; }
+    void write( enumAnalogPort portNum, long val) { u16aAdcValue[portNum] = val; }
 #endif
 	void deInit(void);
 	void open(void);

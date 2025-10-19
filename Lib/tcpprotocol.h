@@ -2,6 +2,8 @@
 #define TCPCOMMAND_H
 
 #define MAX_LEN_MESSAGE 64
+#define MAX_NUM_PARAMS  16
+#define MAX_LEN_PARAM   16
 
 class TcpProtocol
 {
@@ -10,21 +12,38 @@ public:
         eCmdUnknown = 0,
         eCmdGet,
         eCmdSet,
+        eCmdOpen,
+        eCmdClose,
+        eCmdSend,
+        eCmdReceive,
         eCmdMax
     } ECommandType;
 
     typedef enum {
-        eTargetNone = 0,
+        eTargetUnknown = 0,
         eTargetDin,
         eTargetDout,
         eTargetAnalog,
+        eTargetCAN,
+        eTargetSerial,
         eTargetMax
     } ETargetType;
+
+    typedef enum {
+        eParamUnknown = 0,
+        eParamSpeed,
+        eParamFilter,
+        eParamData,
+        eParamMax
+    } EParamType;
 
     typedef enum {
         eStateUnknown = 0,
         eStateOn,
         eStateOff,
+        eStateOpened,
+        eStateClosed,
+        eStateError,
         eStateMax
     } EStateType;
 
@@ -36,17 +55,29 @@ public:
     int getIdx(void) { return idx; }
     EStateType getState(void) { return state; }
     int getValue(void) { return value; }
+    EParamType getParam(void) { return param; }
+    int getNParams(void) { return nparams; }
+    char *getParams(int idx)
+    {
+        if (idx < MAX_NUM_PARAMS)
+            return params[idx];
+        return 0;
+    }
 
 protected:
     ECommandType command;
     ETargetType target;
     int idx;
+    EParamType param;
     EStateType state;
     long value;
     char message[MAX_LEN_MESSAGE+1];
+    int nparams;
+    char params[MAX_NUM_PARAMS][MAX_LEN_PARAM+1];
 
     const char *strCommand[eCmdMax];
     const char *strTarget[eTargetMax];
+    const char *strParam[eParamMax];
     const char *strState[eStateMax];
     const char *strSep;
     const char *strTerm;
@@ -62,6 +93,7 @@ public:
 
     char *toCommand(ECommandType command, ETargetType target, int idx);
     char *toCommand(ECommandType command, ETargetType target, int idx, EStateType state);
+    char *toCommand(ECommandType command, ETargetType target, int idx, EParamType param, int nparams, char *params[]);
     bool fromAnswer(char *message);
 };
 
@@ -73,6 +105,7 @@ public:
     char *toAnswer(ETargetType target, int idx, EStateType state);
     char *toAnswer(EStateType state);
     char *toAnswer(int val);
+    char *toAnswer(EParamType param, int val);
 };
 
 #endif // TCPCOMMAND_H
