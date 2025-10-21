@@ -136,25 +136,25 @@ void MainWindow::readSocket(QTcpSocket *client, const QByteArray &data)
         }
         else if (tcpProtocol.getTarget() == TcpProtocol::eTargetCAN)
         {
-            if (tcpProtocol.getCommand() == TcpProtocol::eCmdReceive)
+            if (tcpProtocol.getParam() == TcpProtocol::eParamData)
             {
                 ui->lineEditRxIdCAN->setText(QString(tcpProtocol.getParams(0)));
-                for (int ind=1; ind<tcpProtocol.getNParams(); ind++)
-                {
-                    QLineEdit *editTxData;
-                    switch (ind)
-                    {
-                    case 0: editTxData = ui->lineEditTxData1CAN; break;
-                    case 1: editTxData = ui->lineEditTxData2CAN; break;
-                    case 2: editTxData = ui->lineEditTxData3CAN; break;
-                    case 3: editTxData = ui->lineEditTxData4CAN; break;
-                    case 4: editTxData = ui->lineEditTxData5CAN; break;
-                    case 5: editTxData = ui->lineEditTxData6CAN; break;
-                    case 6: editTxData = ui->lineEditTxData7CAN; break;
-                    case 7: editTxData = ui->lineEditTxData8CAN; break;
-                    }
-                    editTxData->setText(QString(tcpProtocol.getParams(ind)));
-                }
+                if (tcpProtocol.getNParams() > 1)
+                    ui->lineEditRxData1CAN->setText(QString(tcpProtocol.getParams(1)));
+                if (tcpProtocol.getNParams() > 2)
+                    ui->lineEditRxData2CAN->setText(QString(tcpProtocol.getParams(2)));
+                if (tcpProtocol.getNParams() > 3)
+                    ui->lineEditRxData3CAN->setText(QString(tcpProtocol.getParams(3)));
+                if (tcpProtocol.getNParams() > 4)
+                    ui->lineEditRxData4CAN->setText(QString(tcpProtocol.getParams(4)));
+                if (tcpProtocol.getNParams() > 5)
+                    ui->lineEditRxData5CAN->setText(QString(tcpProtocol.getParams(5)));
+                if (tcpProtocol.getNParams() > 6)
+                    ui->lineEditRxData6CAN->setText(QString(tcpProtocol.getParams(6)));
+                if (tcpProtocol.getNParams() > 7)
+                    ui->lineEditRxData7CAN->setText(QString(tcpProtocol.getParams(7)));
+                if (tcpProtocol.getNParams() > 8)
+                    ui->lineEditRxData8CAN->setText(QString(tcpProtocol.getParams(8)));
             }
         }
     }
@@ -328,5 +328,12 @@ void MainWindow::on_pushButtonWriteCAN_clicked()
             ui->plainTextEditLog->appendPlainText(QTime::currentTime().toString("hh:mm:ss.zzz") + "    Message sent " + QString(message).chopped(1));
         }
     }
+}
+
+void MainWindow::on_pushButtonReadCAN_clicked()
+{
+    QByteArray message(TcpProtocolMaster().toCommand(TcpProtocol::eCmdReceive, TcpProtocol::eTargetCAN, 1, TcpProtocol::eParamData, 0, NULL));
+    tcpMaster->sendToClient(message);
+    ui->plainTextEditLog->appendPlainText(QTime::currentTime().toString("hh:mm:ss.zzz") + "    Message sent " + QString(message).chopped(1));
 }
 

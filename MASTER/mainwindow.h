@@ -43,6 +43,8 @@ private slots:
 
     void on_pushButtonWriteCAN_clicked();
 
+    void on_pushButtonReadCAN_clicked();
+
 public slots:
     void newConnection(QTcpSocket *client);
     void disconnection(QTcpSocket *client);

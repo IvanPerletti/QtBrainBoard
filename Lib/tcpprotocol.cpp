@@ -79,6 +79,25 @@ int TcpProtocol::verifyToken(char *token, const char *tokens[], int ntokens)
     return 0;
 }
 
+bool TcpProtocol::parseParam(char *token)
+{
+    nparams=0;
+    for (int ind=0; ind<MAX_NUM_PARAMS; ind++)
+    {
+        if ((token = strtok(NULL, (const char *)" \n")) != NULL)
+        {
+            if (strlen(token) <= MAX_LEN_PARAM)
+                strcpy(params[nparams++], token);
+            else
+                break;
+        }
+        else
+            break;
+    }
+
+    return (nparams > 0);
+}
+
 /* -----------------------------------------------------------------------------------*/
 // TcpProtocolMaster
 /* -----------------------------------------------------------------------------------*/
@@ -159,9 +178,7 @@ bool TcpProtocolMaster::fromAnswer(char *message)
             {
                 if ((idx = atoi(token)) > 0)
                 {
-                    if ((token = strtok(NULL, (const char *)" ")) == NULL)
-                        token = strtok(NULL, (const char *)"\n");
-                    if (token != NULL)
+                    if ((token = strtok(NULL, (const char *)" \n")) != NULL)
                     {
                         if (target == eTargetDin || target == eTargetDout)
                         {
@@ -178,29 +195,7 @@ bool TcpProtocolMaster::fromAnswer(char *message)
                             if ((param = (EParamType)verifyToken(token, strParam, (int)eParamMax)) > 0)
                             {
                                 if (param == eParamData)
-                                {
-                                    bool end = false;
-
-                                    nparams=0;
-                                    for (int ind=0; ind<MAX_NUM_PARAMS && end==false; ind++)
-                                    {
-                                        if ((token = strtok(NULL, (const char *)" ")) == NULL)
-                                        {
-                                            token = strtok(NULL, (const char *)"\n");
-                                            end = true;
-                                        }
-                                        if (token != NULL)
-                                        {
-                                            if (strlen(token) <= MAX_LEN_PARAM)
-                                            {
-                                                strcpy(params[nparams++], token);
-                                                ret = true;
-                                            }
-                                            else
-                                                break;
-                                        }
-                                    }
-                                }
+                                    ret = parseParam(token);
                             }
                         }
                     }
@@ -229,17 +224,17 @@ bool TcpProtocolSlave::fromCommand(char *message)
             {
                 if ((target = (ETargetType)verifyToken(token, strTarget, (int)eTargetMax)) > 0)
                 {
-                    if ((token = strtok(NULL, (const char *)" ")) == NULL)
-                        token = strtok(NULL, (const char *)"\n");
-                    if (token != NULL)
+                    if ((token = strtok(NULL, (const char *)" \n")) != NULL)
                     {
                         if ((idx = atoi(token)) > 0)
                         {
-                            if (command == eCmdSet || command == eCmdSend)
+                            switch (command)
                             {
-                                if ((token = strtok(NULL, (const char *)" ")) == NULL)
-                                    token = strtok(NULL, (const char *)"\n");
-                                if (token != NULL)
+                            case eCmdGet:
+                                ret = (target == eTargetDin || target == eTargetDout || target == eTargetAnalog);
+                                break;
+                            case eCmdSet:
+                                if ((token = strtok(NULL, (const char *)" \n")) != NULL)
                                 {
                                     if (target == eTargetDin || target == eTargetDout)
                                     {
@@ -253,35 +248,32 @@ bool TcpProtocolSlave::fromCommand(char *message)
                                     }
                                     else if (target == eTargetCAN)
                                     {
-                                        if ((param = (EParamType)verifyToken(token, strParam, (int)eParamMax)) > 0)
-                                        {
-                                            bool end = false;
-
-                                            nparams=0;
-                                            for (int ind=0; ind<MAX_NUM_PARAMS && end==false; ind++)
-                                            {
-                                                if ((token = strtok(NULL, (const char *)" ")) == NULL)
-                                                {
-                                                    token = strtok(NULL, (const char *)"\n");
-                                                    end = true;
-                                                }
-                                                if (token != NULL)
-                                                {
-                                                    if (strlen(token) <= MAX_LEN_PARAM)
-                                                    {
-                                                        strcpy(params[nparams++], token);
-                                                        ret = true;
-                                                    }
-                                                    else
-                                                        break;
-                                                }
-                                            }
-                                        }
+                                        if ((param = (EParamType)verifyToken(token, strParam, (int)eParamMax)) == eParamFilter || param == eParamSpeed)
+                                            ret = parseParam(token);
                                     }
                                 }
+                                break;
+                            case eCmdOpen:
+                            case eCmdClose:
+                                ret = (target == eTargetCAN);
+                                break;
+                            case eCmdSend:
+                                if ((token = strtok(NULL, (const char *)" \n")) != NULL)
+                                {
+                                    if ((param = (EParamType)verifyToken(token, strParam, (int)eParamMax)) == eParamData)
+                                        ret = parseParam(token);
+                                }
+                                break;
+                            case eCmdReceive:
+                                if ((token = strtok(NULL, (const char *)" \n")) != NULL)
+                                {
+                                    if ((param = (EParamType)verifyToken(token, strParam, (int)eParamMax)) == eParamData)
+                                        ret = true;
+                                }
+                                break;
+                            default:
+                                break;
                             }
-                            else
-                                ret = true;
                         }
                     }
                 }
@@ -290,20 +282,6 @@ bool TcpProtocolSlave::fromCommand(char *message)
     }
 
     return ret;
-}
-
-char *TcpProtocolSlave::toAnswer(ETargetType target, int idx, EStateType state)
-{
-    char str[10];
-
-    strcpy(message, strTarget[target]);
-    strcat(message, strSep);
-    snprintf(str, sizeof(str), "%d", idx);
-    strcat(message, str);
-    strcat(message, strSep);
-    strcat(message, strState[state]);
-    strcat(message, strTerm);
-    return message;
 }
 
 char *TcpProtocolSlave::toAnswer(EStateType state)
@@ -350,4 +328,33 @@ char *TcpProtocolSlave::toAnswer(EParamType param, int val)
     strcat(message, str);
     strcat(message, strTerm);
     return message;
+}
+
+char *TcpProtocolSlave::toAnswer(int nparams, char *params[])
+{
+    if (nparams <= MAX_NUM_PARAMS)
+    {
+        char str[MAX_LEN_PARAM+1];
+
+        strcpy(message, strTarget[target]);
+        strcat(message, strSep);
+        snprintf(str, sizeof(str), "%d", idx);
+        strcat(message, str);
+        strcat(message, strSep);
+        strcat(message, strParam[param]);
+        strcat(message, strSep);
+        for (int ind=0; ind<nparams; ind++)
+        {
+            if (strlen(params[ind]) <= MAX_LEN_PARAM)
+            {
+                strcat(message, params[ind]);
+                if (ind < (nparams - 1))
+                    strcat(message, strSep);
+            }
+        }
+        strcat(message, strTerm);
+
+        return message;
+    }
+    return NULL;
 }

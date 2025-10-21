@@ -7,6 +7,8 @@
 #include <QLabel>
 #include <QRadioButton>
 
+#include "ICan.h"
+
 #include "..\Lib\tcpprotocol.h"
 
 QT_BEGIN_NAMESPACE
@@ -86,6 +88,8 @@ private:
     void on_analog_editingFinished(int idx, int val);
 
     TcpProtocolSlave tcpProtocolSlave;
+
+    ICan* pCan;
 
     void parseCommand(char *message);
 };

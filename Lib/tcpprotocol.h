@@ -84,6 +84,7 @@ protected:
 
     void fillVectors(void);
     int verifyToken(char *token, const char *tokens[], int ntokens);
+    bool parseParam(char *token);
 
 };
 
@@ -102,10 +103,10 @@ class TcpProtocolSlave : public TcpProtocol
 public:
 
     bool fromCommand(char *message);
-    char *toAnswer(ETargetType target, int idx, EStateType state);
     char *toAnswer(EStateType state);
     char *toAnswer(int val);
     char *toAnswer(EParamType param, int val);
+    char *toAnswer(int nparams, char *params[]);
 };
 
 #endif // TCPCOMMAND_H

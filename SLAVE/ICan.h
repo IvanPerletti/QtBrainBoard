@@ -134,10 +134,20 @@ public:
     void open(long qID) {;}
     void write (const unsigned int msgID, const char *pMsg, unsigned int nBytes) {;}
     void write (CanTxMsg* msg) {;}
-    long read(CanRxMsg* msg, long qID = 0) {;}
+    long read(CanRxMsg* msg, long qID = 0)
+    {
+        msg->StdId = 0x123;
+        msg->DLC = 4;
+        msg->Data[0] = 0xAA;
+        msg->Data[1] = 0xBB;
+        msg->Data[2] = 0xCC;
+        msg->Data[3] = 0xDD;
+
+        return 0;
+    }
 
     bool setMode(enCanMode mode) {;}
-	bool isToRead(long qID) { return rxQ[qID].size() > 0; }
+    bool isToRead(long qID) { return true; }
 #ifdef STM32F4XX
     bool isInError(void)
 	{ return ( CAN_GetLastErrorCode(pCANx) != CAN_ErrorCode_NoErr ); }
@@ -176,7 +186,7 @@ public:
 	enCanSpeed getSpeed(void) { return eCanSpeed; }
     void setSpeed(enCanSpeed speed) { eCanSpeed = speed; }
 
-	static long getInstance(ICan* &pCan);
+    static long getInstance(ICan* &pCan) {;}
 
     bool registerRxCallback(pmf_t pFun) {;}
     bool registerTxCallback(pmf_t pFun) {;}
@@ -251,9 +261,6 @@ private:
 	void getUniqueFilters(IQ_Generic<uint16_t, MAX_FILTERS_NUM>& qDst);
 #endif
 };
-
-
-ICan iCan;
 
 extern "C" {
 	void CAN1_RX0_IRQHandler(void);

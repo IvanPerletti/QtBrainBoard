@@ -2,12 +2,14 @@
 #include "ui_mainwindow.h"
 #include "TDigitalPort.h"
 #include "TAnalogPort.h"
-#include "ICan.h"
 
 #include <QTime>
 
 #define DEFAULT_TCP_PORT    2020
 #define DEFAULT_TCP_IP      "127.0.0.1"
+
+
+ICan iCan;
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -16,6 +18,8 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
 
     tcpSlave = new QTcpSocket();
+
+    pCan = &iCan;
 
     QLabel *pAddressLabel = new QLabel();
     ui->toolBar->insertWidget(ui->actionDisconnect, pAddressLabel);
@@ -157,12 +161,12 @@ void MainWindow::parseCommand(char *message)
 
             if (tcpProtocolSlave.getCommand() == TcpProtocol::eCmdOpen)
             {
-                iCan.open(0);
+                pCan->open(0);
                 message = tcpProtocolSlave.toAnswer(TcpProtocol::eStateOpened);
             }
             else if (tcpProtocolSlave.getCommand() == TcpProtocol::eCmdClose)
             {
-                iCan.close(0);
+                pCan->close(0);
                 message = tcpProtocolSlave.toAnswer(TcpProtocol::eStateClosed);
             }
             else if (tcpProtocolSlave.getCommand() == TcpProtocol::eCmdSet)
@@ -173,18 +177,18 @@ void MainWindow::parseCommand(char *message)
                     switch (speed)
                     {
                     case 125:
-                        iCan.setSpeed(ICan::CAN_BUS_SPEED_125);
+                        pCan->setSpeed(ICan::CAN_BUS_SPEED_125);
                         break;
                     case 250:
-                        iCan.setSpeed(ICan::CAN_BUS_SPEED_250);
+                        pCan->setSpeed(ICan::CAN_BUS_SPEED_250);
                         break;
                     case 500:
-                        iCan.setSpeed(ICan::CAN_BUS_SPEED_500);
+                        pCan->setSpeed(ICan::CAN_BUS_SPEED_500);
                         break;
                     default:
                         ; // send error answer
                     }
-                    message = tcpProtocolSlave.toAnswer(tcpProtocolSlave.getParam(), (int)iCan.getSpeed());
+                    message = tcpProtocolSlave.toAnswer(tcpProtocolSlave.getParam(), (int)pCan->getSpeed());
                 }
                 else if (tcpProtocolSlave.getParam() == TcpProtocol::eParamFilter)
                 {
@@ -196,22 +200,24 @@ void MainWindow::parseCommand(char *message)
                     switch (tcpProtocolSlave.getNParams())
                     {
                     case 1:
-                        ret = iCan.registerFilter(0, filters[0]);
+                        ret = pCan->registerFilter(0, filters[0]);
                         break;
                     case 2:
-                        ret = iCan.registerFilter(0, filters[0], filters[1]);
+                        ret = pCan->registerFilter(0, filters[0], filters[1]);
                         break;
                     case 3:
-                        ret = iCan.registerFilter(0, filters[0], filters[1], filters[2]);
+                        ret = pCan->registerFilter(0, filters[0], filters[1], filters[2]);
                         break;
                     case 4:
-                        ret = iCan.registerFilter(0, filters[0], filters[1], filters[2], filters[3]);
+                        ret = pCan->registerFilter(0, filters[0], filters[1], filters[2], filters[3]);
                         break;
                     }
                     if (ret)
                         message = tcpProtocolSlave.toAnswer(tcpProtocolSlave.getParam(), tcpProtocolSlave.getNParams());
                     else
+                    {
                         ; // send error answer
+                    }
                 }
             }
             else if (tcpProtocolSlave.getCommand() == TcpProtocol::eCmdSend)
@@ -228,15 +234,45 @@ void MainWindow::parseCommand(char *message)
                         canTxMsg.DLC = tcpProtocolSlave.getNParams() - 1;
                         for (int ind=0; ind<tcpProtocolSlave.getNParams() - 1; ind++)
                             canTxMsg.Data[ind] = (uint16_t)strtol(tcpProtocolSlave.getParams(ind+1), NULL, 16);
-                        iCan.write(&canTxMsg);
+                        pCan->write(&canTxMsg);
                         ret = true;
                     }
                     if (ret)
                         message = tcpProtocolSlave.toAnswer(tcpProtocolSlave.getParam(), tcpProtocolSlave.getNParams());
                     else
+                    {
                         ; // send error answer
+                    }
                 }
+            }
+            else if (tcpProtocolSlave.getCommand() == TcpProtocol::eCmdReceive)
+            {
+                if (pCan->isToRead(0))
+                {
+                    CanRxMsg msg;
+                    int nparams = 0;
+                    char str_param[1+8][MAX_LEN_PARAM+1];
+                    char *params[1+8];
 
+                    pCan->read(&msg, 0);
+
+                    snprintf(str_param[nparams], MAX_LEN_PARAM, "%03X", msg.StdId);
+                    str_param[nparams][MAX_LEN_PARAM] = '\0';
+                    params[nparams] = str_param[nparams];
+                    ++nparams;
+
+                    for (int ind=0; ind<msg.DLC; ind++)
+                    {
+                        snprintf(str_param[nparams], MAX_LEN_PARAM, "%02X", msg.Data[ind]);
+                        str_param[nparams][MAX_LEN_PARAM] = '\0';
+                        params[nparams] = str_param[nparams];
+                        ++nparams;
+                    }
+                    if (nparams >= 2)   // Id CAN + at least 1 byte of data
+                    {
+                        message = tcpProtocolSlave.toAnswer(nparams, params);
+                    }
+                }
             }
             if (message)
             {
